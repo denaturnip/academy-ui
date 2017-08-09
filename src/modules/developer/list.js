@@ -3,91 +3,187 @@ import { Router } from 'aurelia-router';
 import { RestService } from "../../lib/rest-service";
 import createLoopbackFilterObject from "../../lib/loopback-filter-factory";
 import moment from "moment";
-import { bindable, containerless, computedFrom } from "aurelia-framework";
 
 @inject(Router)
 export class List {
-  totalSeconds=0;
-  
-    @bindable selectedProject;// required. for initial variable reference.
-  constructor(router) {
-    // this.service = new RestService("core", "tasks");
-    this.service = new RestService("core", "timerecords");
-    this.router = router;
-    this.getData();
-    var currentItem;
-  }
-start(item){
-
-   if(this.currentItem)
-     this.currentItem.isStart = false;
-     item.isStart = true;
-     item.isStop = true;
-     this.currentItem = item;
-
-    this.index = 0;
-    for(var i in this.data) {
-    var isHas = false;
-    if(item.id == this.data[i].id){
-      isHas = true;
+    info = {};
+    constructor(router) {
+        this.service = new RestService("core", "assignments");
+        this.router = router;
+        this.getData();
+        this.getInfo();
+        this.waktu = 0.0;
     }
-    if(isHas) {
-      this.index = i;
-      break;
+    getData() {
+        this.service.get({ filter: { include: 'task', where:{status: 'open'} }  }).then(results => {
+            this.data = results;
+            console.log(this.data);
+            var getTasks;
+            for (var item of this.data) {
+                var tasksService = new RestService("core", `/assignments/`);
+                getTasks.push(tasksService.get());
+            }
+
+        })
+        this.service.get({ filter: { include: 'task', where:{status: 'closed'} }  }).then(results => {
+            this.dataClosed = results;
+            console.log(this.dataClosed);
+            var getTasks;
+            for (var item of this.dataClosed) {
+                var tasksService = new RestService("core", `/assignments/`);
+                getTasks.push(tasksService.get());
+            }
+
+        })
     }
-  }
-  console.log(this.data[this.index]);
-    setInterval(() => this.data [this.index].duration = parseInt (this.data[this.index].duration) + 1,1000);
-  
-}
 
-stop(item){
-  document.getElementById("button").hidden = true
-     clearInterval(this.interval);
-        delete this.interval;  
+    async getInfo() {
+        var serviceAssignment =  new RestService("core", "assignments");
+        var serviceTask =  new RestService("core", "tasks");
+        this.info.totAssignments = (await serviceAssignment.count()).count;
+        this.info.totTasks = (await serviceTask.count()).count;
+    }
 
-}
+    __view(id) {
+        this.router.navigateToRoute('view', { id: id });
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    start(item) {
+        if (this.currentItem)
+            this.currentItem.isStart = false;
 
-pause(item){
-  item.isStart =false;
-     clearInterval(this.interval);
-        delete this.interval;  
-}
+        item.isStart = true;
+        item.isStop = true;
+        this.currentItem = item;
+        this.waktu = item.duration;
 
-async bind(context) {
-    this.context = context;
-    this.data = this.context.data;
-  }
+        for (var i in this.data) {
+            var isHas = false
+            if (this.data[i].id == item.id) {
+                isHas = true;
+            }
+            if (isHas) {
+                this.index = i;
+                break;
+            }
+        }
 
-getData(){
-    this.service.get().then(results => {
-      this.data = results;
-      console.log(this.data);
-      var getTasks;
-      var getTime;
-      for(var item of this.data){
+        this.data[this.index].waktu = 0.0;
+        this.interval2 = setInterval(() =>
+            this.data[this.index].waktu = parseInt(this.data[this.index].waktu) + 1,
+            1000);
+        if (this.data[this.index].duration == null) {
+            this.data[this.index].duration = 0;
+            this.interval = setInterval(() =>
+                this.data[this.index].duration = parseInt(this.data[this.index].duration) + 1,
+                1000);
+
+        } else {
+            this.interval = setInterval(() =>
+                this.data[this.index].duration = parseInt(this.data[this.index].duration) + 1,
+                1000);
+        }
+        var assignment =
+            {
+                "elapsed": this.data[this.index].duration,
+                "date": this.data[this.index].date,
+                "budget": this.data[this.index].budget,
+                "remark": this.data[this.index].remark,
+                "status": this.data[this.index].status,
+                "id": this.data[this.index].id,
+                "accountId": this.data[this.index].accountId,
+                "taskId": this.data[this.index].taskId,
+                "iterationId": this.data[this.index].iterationId,
+                "assignmentId": this.data[this.index].assignmentId,
+                "duration": this.data[this.index].duration
+            };
+        var timerRecord =
+            {
+                "date": new Date(),
+                "name": this.data[this.index].task.name,
+                "duration": this.data[this.index].duration,
+                "description": this.data[this.index].task.description,
+                "remark": this.data[this.index].task.remark,
+                "projectId": this.data[this.index].task.projectId,
+                "assignmentId": this.data[this.index].task.id,
+                "waktu": this.data[this.index].waktu,
+            }
+    }
+    stop(item) {
+        item.isStop = false;
         item.isStart = false;
-        // var tasksService = new RestService("core", `/tasks/${item.id}/tasks`);
-        var timeService = new RestService("core", `/timerecord/${item.id}/timerecord`);
-        getTime.push(timeService.get());
-        // getTasks.push(tasksService.get());
-  }
-    })
-  }
+        clearInterval(this.interval);
+        clearInterval(this.interval2);
+        this.data[this.index].status = 'closed';
+        var assignment =
+            {
+                "elapsed": this.data[this.index].duration,
+                "date": this.data[this.index].date,
+                "budget": this.data[this.index].budget,
+                "remark": this.data[this.index].remark,
+                "status": this.data[this.index].status,
+                "id": this.data[this.index].id,
+                "accountId": this.data[this.index].accountId,
+                "taskId": this.data[this.index].taskId,
+                "iterationId": this.data[this.index].iterationId,
+                "assignmentId": this.data[this.index].assignmentId,
+                "duration": this.data[this.index].duration
+            };
+        var timerRecord =
+            {
+                "date": new Date(),
+                "name": this.data[this.index].task.name,
+                "duration": this.data[this.index].duration,
+                "description": this.data[this.index].task.description,
+                "remark": this.data[this.index].task.remark,
+                "projectId": this.data[this.index].task.projectId,
+                "assignmentId": this.data[this.index].task.id,
+                "waktu": this.data[this.index].waktu,
+            }
 
-loader = (info) => {
-    var fields = this.columns.map(col => {
-      if (typeof col === "string")
-        return col;
-      else if (typeof col === "object" && col.field)
-        return col.field;
-    })
+        delete this.interval;
+        this.service.post(timerRecord, `assignments/${this.data[this.index].id}/timerecords`)
+        this.service.put(this.data[this.index].id, assignment, `assignments/${this.data[this.index].id}`)
+    }
+    __goToView() {
+        this.router.navigateToRoute('list');
+    }
 
-    var loopbackFilter = createLoopbackFilterObject(info, fields)
-  };
+    pause(item) {
+        item.isStop = false;
+        item.isStart = false;
+        clearInterval(this.interval);
+        clearInterval(this.interval2);
 
-  __view(id) {
-    this.router.navigateToRoute('view', { id: id });
-  }
+        var assignment =
+            {
+                "elapsed": this.data[this.index].duration,
+                "date": this.data[this.index].date,
+                "budget": this.data[this.index].budget,
+                "remark": this.data[this.index].remark,
+                "status": this.data[this.index].status,
+                "id": this.data[this.index].id,
+                "accountId": this.data[this.index].accountId,
+                "taskId": this.data[this.index].taskId,
+                "iterationId": this.data[this.index].iterationId,
+                "assignmentId": this.data[this.index].assignmentId,
+                "duration": this.data[this.index].duration
+            };
+        var timerRecord =
+            {
+                "date": new Date(),
+                "name": this.data[this.index].task.name,
+                "duration": this.data[this.index].duration,
+                "description": this.data[this.index].task.description,
+                "remark": this.data[this.index].task.remark,
+                "projectId": this.data[this.index].task.projectId,
+                "assignmentId": this.data[this.index].task.id,
+                "waktu": this.data[this.index].waktu,
+            }
 
+        delete this.interval;
+        this.service.post(timerRecord, `assignments/${this.data[this.index].id}/timerecords`)
+        this.service.put(this.data[this.index].id, assignment, `assignments/${this.data[this.index].id}`)
+    }
 }
+ 
