@@ -8,17 +8,27 @@ import moment from "moment";
 import { Assignments } from './assignments'
 
 
+<<<<<<< HEAD
 @inject(Router, Dialog)
 export class reports{
 
+=======
+
+@inject(Router, Dialog)
+export class reports{
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
     @bindable totalProjects;
 
     @bindable totalClosedAssignment;
     @bindable totalOpenAssignment;
 
     @bindable dataku;
+<<<<<<< HEAD
 
 
+=======
+    @bindable dob;
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
 
     constructor(router, dialog) {
         this.service = new RestService("core", "accounts");    
@@ -33,20 +43,40 @@ export class reports{
 
         this.accountId;
         this.dataku = {};
+<<<<<<< HEAD
+=======
+        this.dob;
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
     }
 
     async activate(params){
         var id = params.id;
         this.accountId = id;
         this.data = await this.service.get(id, { filter: { include: "profile" } });
+<<<<<<< HEAD
 
+=======
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
         this.countTotalEfficiency();
         this.countClosedAssignment();
         this.countOpenAssignment();
         this.countProjects();
+<<<<<<< HEAD
          
     }  
 
+=======
+
+        this.dob = this.GetFormattedDate(this.data.profile.dob);
+         
+    }  
+
+    GetFormattedDate(date) {
+        var todayTime = new Date(date).toUTCString();
+        return todayTime ? moment(todayTime).format("DD-MMM-YYYY") : "-";
+    }
+
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
     async countTotalEfficiency(){
         this.countEfficiency = new RestService("core",`reports/account/${this.accountId}/assignments/efficiency`)
         this.totalEfficiency = await this.countEfficiency.get();
@@ -67,6 +97,7 @@ export class reports{
         this.totalProjects = await this.countProject.get();
     }
 
+<<<<<<< HEAD
   showAssignments() {
     var data = {"accountId": this.accountId}
     this.dataku = {datas: data};
@@ -78,4 +109,11 @@ export class reports{
     this.dataku = {datas: data};
     console.log(this.dataku);
   }
+=======
+    showAssignments() {
+        var data = {"accountId": this.accountId}
+        this.dataku = {datas: data};
+        console.log(this.dataku);
+    }
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
 }

@@ -6,6 +6,7 @@ import moment from "moment";
 
 @inject(Router)
 export class List {
+<<<<<<< HEAD
     info = {};
     constructor(router) {
         this.service = new RestService("core", "assignments");
@@ -24,6 +25,27 @@ export class List {
                 getTasks.push(tasksService.get());
             }
 
+=======
+
+    info = {};
+    constructor(router) {
+        this.service = new RestService("core", "assignments");
+        this.router = router;
+        this.getData();
+        this.getInfo();
+        this.waktu = 0.0;
+    }
+    getData() {
+        this.service.get({ filter: { include: 'task', where:{status: 'open'} }  }).then(results => {
+            this.data = results;
+            console.log(this.data);
+            var getTasks;
+            for (var item of this.data) {
+                var tasksService = new RestService("core", `/assignments/`);
+                getTasks.push(tasksService.get());
+            }
+
+>>>>>>> 004d7b94575c92c1acb5491680dfb6e43b8b40e7
         })
         this.service.get({ filter: { include: 'task', where:{status: 'closed'} }  }).then(results => {
             this.dataClosed = results;
